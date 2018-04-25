@@ -37,8 +37,7 @@ int main(int argc, char **argv) {
   uint32_t threads_num = 0;
   uint32_t array_size = 0;
   uint32_t seed = 0;
-  pthread_t threads[threads_num];
-
+ 
   while (1) {
     int current_optind = optind ? optind : 1;
 
@@ -93,9 +92,9 @@ int main(int argc, char **argv) {
     return 1;
   }
   
-
+  pthread_t threads[threads_num];
   int *array = malloc(sizeof(int) * array_size);
-  struct SumArgs *args = malloc(sizeof(struct SumArgs) * threads_num);
+  struct SumArgs args[threads_num];
   GenerateArray(array, array_size, seed);
   
   struct timeval start_time;
@@ -108,7 +107,7 @@ int main(int argc, char **argv) {
     args[i].array = array;
     args[i].begin = step * i;
     args[i].end   = (i == threads_num - 1) ? array_size : step * (i+1);
-    if (pthread_create(&threads[i], NULL, ThreadSum, (void *)(args+i))) {
+    if (pthread_create(&threads[i], NULL, ThreadSum, &args[i])) {
       printf("Error: pthread_create failed!\n");
       return 1;
     }
