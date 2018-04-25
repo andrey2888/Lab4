@@ -1,8 +1,16 @@
+
+#include <getopt.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <pthread.h>
+#include <getopt.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include "utils.h"
+
 
 struct SumArgs {
   int *array;
@@ -12,9 +20,10 @@ struct SumArgs {
 
 int Sum(const struct SumArgs *args) {
   int sum = 0;
-  for(int i = args->array + args->begin; i != args->array + args->end; i++){
+  for(int *i = args->array + args->begin; i < args->array + args->end; i++){
       sum += *i;
   }
+
   return sum;
 }
 
@@ -29,14 +38,8 @@ int main(int argc, char **argv) {
   uint32_t array_size = 0;
   uint32_t seed = 0;
   pthread_t threads[threads_num];
-  
-    int seed = -1;
-  int array_size = -1;
-  int timeout = -1;
-  
-  bool with_files = false;
 
-  while (true) {
+  while (1) {
     int current_optind = optind ? optind : 1;
 
     static struct option options[] = {{"seed", required_argument, 0, 0},
@@ -89,23 +92,23 @@ int main(int argc, char **argv) {
     printf("Has at least one no option argument\n");
     return 1;
   }
-
-
-  /*
-   * TODO:
-   * your code here
-   * Generate array here
-   */
+  
 
   int *array = malloc(sizeof(int) * array_size);
-
-  struct SumArgs *args = malloc(sizeof(struct SumArgs) * threds_count);
+  struct SumArgs *args = malloc(sizeof(struct SumArgs) * threads_num);
+  GenerateArray(array, array_size, seed);
+  
+  struct timeval start_time;
+  struct timeval fin_time;
+  gettimeofday(&start_time, NULL);
+  
+  
   uint32_t step = array_size/threads_num;
   for (uint32_t i = 0; i < threads_num; i++) {
     args[i].array = array;
     args[i].begin = step * i;
-    args[i].end   = (i = threads_num - 1) ? array_size : step * (i+1);
-    if (pthread_create(&threads[i], NULL, ThreadSum, (void *)(args+1)) {
+    args[i].end   = (i == threads_num - 1) ? array_size : step * (i+1);
+    if (pthread_create(&threads[i], NULL, ThreadSum, (void *)(args+i))) {
       printf("Error: pthread_create failed!\n");
       return 1;
     }
@@ -117,8 +120,14 @@ int main(int argc, char **argv) {
     pthread_join(threads[i], (void **)&sum);
     total_sum += sum;
   }
+  gettimeofday(&fin_time, NULL);
+  printf("Total: %d\n", total_sum);
+
+  double elapsed_time = (fin_time.tv_sec - start_time.tv_sec) * 1000.0;
+  elapsed_time += (fin_time.tv_usec - start_time.tv_usec) / 1000.0;
+  printf("Elapsed time: %fms\n", elapsed_time);
 
   free(array);
-  printf("Total: %d\n", total_sum);
+  
   return 0;
 }

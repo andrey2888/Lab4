@@ -214,7 +214,6 @@ int main(int argc, char **argv) {
   
   double elapsed_time = (finish_time.tv_sec - start_time.tv_sec) * 1000.0;
   elapsed_time += (finish_time.tv_usec - start_time.tv_usec) / 1000.0;
-
   printf("Elapsed time: %fms\n", elapsed_time);
   fflush(NULL);
   return 0;
